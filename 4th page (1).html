@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Camera Access with Location Name, Date, and Time</title>
+</head>
+<link rel="stylesheet" type="text/css" href="style2.css" />
+<body>
+    <font size=27 color=blue face="Impact, Charcoal, sans-serif">
+    <h1 align=center>Attendance</h1>
+    <video id="video" width="640" height="480" autoplay></video>
+    <button id="snapButton">Take Snapshot</button>
+    <canvas id="canvas" width="640" height="480" style="display: none;"></canvas>
+    <div id="locationInfo"></div>
+    <div id="dateTimeInfo"></div>
+
+    <script>
+        // Access the camera and display the video stream
+        navigator.mediaDevices.getUserMedia({ video: true })
+            .then(function(stream) {
+                var videoElement = document.getElementById('video');
+                videoElement.srcObject = stream;
+            })
+            .catch(function(err) {
+                console.error('Error accessing camera: ', err);
+            });
+
+        // Function to take a snapshot
+        document.getElementById('snapButton').addEventListener('click', function() {
+            var videoElement = document.getElementById('video');
+            var canvas = document.getElementById('canvas');
+            var context = canvas.getContext('2d');
+
+            // Draw the current frame of the video onto the canvas
+            context.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
+
+            // Show the canvas
+            canvas.style.display = 'block';
+
+            // Display location information
+            getLocation();
+
+            // Display date and time information
+            displayDateTime();
+        });
+
+        // Function to get current location and display location name
+        function getLocation() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(function(position) {
+                    var latitude = position.coords.latitude;
+                    var longitude = position.coords.longitude;
+
+                    // Reverse geocoding using third-party API
+                    fetch('https://api.opencagedata.com/geocode/v1/json?q=' + latitude + '+' + longitude + '&key=YOUR_API_KEY')
+                        .then(response => response.json())
+                        .then(data => {
+                            var locationInfo = document.getElementById('locationInfo');
+                            if (data.results.length > 0) {
+                                var locationName = data.results[0].formatted;
+                                locationInfo.innerHTML = "Location: " + locationName;
+                            } else {
+                                locationInfo.innerHTML = "Location: Not Found";
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error fetching location: ', error);
+                        });
+                });
+            } else {
+                document.getElementById("locationInfo").innerHTML = "Geolocation is not supported by this browser.";
+            }
+        }
+
+        // Function to display current date and time
+        function displayDateTime() {
+            var dateTimeInfo = document.getElementById("dateTimeInfo");
+            var now = new Date();
+            var dateTimeString = "Date and Time: " + now.toLocaleDateString() + " " + now.toLocaleTimeString();
+            dateTimeInfo.innerHTML = dateTimeString;
+        }
+    </script>
+</body>
+</html>
